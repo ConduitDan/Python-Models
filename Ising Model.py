@@ -49,7 +49,7 @@ class Ising:
     def annel(self):
         Tc = 2*self.J/np.log(1+np.sqrt(2))
         for T in range(5,0):
-            NMCsteps = log(T-Tc)
+            NMCsteps = np.log(T-Tc)
 
 if __name__ == '__main__':
         #fig, ax = plt.subplots(1,1)
