@@ -9,7 +9,7 @@ class TestViskeModel(unittest.TestCase):
         equalY = testModel.spins[0].y == testModel.spins[1].y
         equalAngle = testModel.spins[0].angle == testModel.spins[1].angle
         self.assertFalse(equalX or equalY)
-        self.assertFalse(testModel.spins[0].angle = 0)
+        self.assertFalse(testModel.spins[0].angle == 0)
 
         
         
