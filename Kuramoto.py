@@ -9,25 +9,26 @@ class KuramotoModel:
     ''' This class is for making kurmodo modles, this class will set up
     the oscillators and manage time and plotting commands'''
     def __init__(self, N=2, D = 0, K=-.1, dt = .01, maxT = 20, dtOutput = .05):
-        self.N = N
-        self.K = K
-        self.dt = dt
-        self.dtOutput = dtOutput
-        self.t = 0
+        self.N = N # number of oscillators 
+        self.K = K # Coupling constant
+        self.dt = dt # time step
+        self.dtOutput = dtOutput # how often to output 
+        self.t = 0 # time 
         
-        self.maxT = maxT
-        self.D = D
+        self.maxT = maxT # stop time
+        self.D = D # noise strength
         
-        self.oscList = []
+        self.oscList = [] # list of oscilators
         
-        for i in range(self.N):
+        for i in range(self.N): #Create the list of Kuramoto Oscillators
             self.oscList.append(KuramotoOscillator(noiseStrength = self.D,couplingStrength = self.K))
         
-        self.connectNN()
+        self.connectNN() # Couple them Nearest Neighbor
         
         
         
     def connectNN(self):
+        # connect the oscilators to adjecent ones
         for i in range(self.N):
             self.oscList[i].addNeighbor(self.oscList[(i-1)%self.N])
             self.oscList[i].addNeighbor(self.oscList[(i+1)%self.N])
@@ -60,11 +61,13 @@ class KuramotoModel:
         return not self.t<self.maxT
     
     def output(self):
-        
+        # output angle list and time
         return (list(osc.theta for osc in self.oscList), self.t)
         
 
     def plot(self,angleList = None,t=None):
+        # to plot we draw a large cirlce and a smaller circle on it for each Oscillator
+        # the Oscillator are in RGB order
             if angleList == None:
                 angleList = list(osc.theta for osc in self.oscList)
             R= .45
@@ -104,7 +107,7 @@ class KuramotoModel:
         return int(self.maxT/self.dtOutput)
     
     def runAndPlot(self):
-        '''runs the model and yeilds an artist to draw the quiver'''
+        '''runs the model and yeilds an artist to draw the plot'''
         for output in self.run():
             print(self.t)
             yield self.plot()
@@ -117,19 +120,20 @@ class KuramotoModel:
 
 class KuramotoOscillator:
     '''This class has is a single KuramotoOscillator it has natural
-    fequencey and a stratigy for coupling'''
+    fequencey and a Strategy for coupling'''
     def __init__(self, omega = 1, noiseStrength = 0,
                couplingStrength = 1,
                couplingStat = None,
                IC = None):
-        self.omega = omega
+        
+        self.omega = omega # frequency
         self.D = noiseStrength
         self.K = couplingStrength
         
         if couplingStat == None:
-            self.couplingStrat = KuramotoCouplingAngleDep()
+            self.couplingStrat = KuramotoCouplingBasic() # the standard kuramoto coupling
         else:
-            self.couplingStrat = couplingStat
+            self.couplingStrat = couplingStat # or use something less standard
 
         if IC == None:
             self.theta = np.random.random()*2*np.pi
@@ -149,7 +153,7 @@ class KuramotoOscillator:
         return self.omega + self.K*self.couplingStrat.calculateCoupling(self)
 
     def calculateUpdate(self,dt):
-        #Forward Euler, can ad more later though strat
+        #Forward Euler, can add more later though strat
         self.newTheta = self.theta + dt * self.calculateRHS()
         
     def acceptUpdate(self):
@@ -157,7 +161,7 @@ class KuramotoOscillator:
     
 
 
-class Singleton(type):
+class Singleton(type): # we only need one copy of each coupling strat so make them singletons
     _instances = {}
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
