@@ -1,36 +1,44 @@
 """
 This class draws iterated function systems
 """
-from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 
 
 class IFSGenerator:
-    def __init__(self,IFS = None,depth = 10,overwrite = False):
-        if IFS == None:
+    def __init__(self, IFS=None, depth=10, overwrite=False):
+        if IFS is None:
             raise "Please supply an IFS"
         self.IFS = IFS
-        self.fileName ="fractals/"+IFS.name() + str(depth)
+        self.fileName = "fractals/" + IFS.name() + str(depth)
 
         self.overwrite = overwrite
         self.depth = depth
         self.File = None
+        self.functionList = self.IFS.getFunctionList()
+        self.numOfFunctions = len(self.functionList)
+        self.numPoints = (self.numOfFunctions**(self.depth+1))
+        self.x = [0.0]*self.numPoints
+        self.y = [0.0]*self.numPoints
+        self.color = [0]*self.numPoints
 
     def canReadFromFile(self):
         readable = False
         if not self.overwrite:
             try:
-                self.File = open(self.fileName+".out","r")
+                self.File = open(self.fileName+".out", "r")
                 readable = True
                 self.File.close()
-            except: FileNotFoundError
-            
+            except:
+                FileNotFoundError
         return readable
+    
     def readPointsFromFile(self):
         self.File = open(self.fileName+".out","r")
         xline = self.File.readline().split(',')
         yline = self.File.readline().split(',')
+        xline.pop() #remove /n
+        yline.pop() #remove /n
         x = list(float(element) for element in xline)
         y = list(float(element) for element in yline) 
 
@@ -44,41 +52,37 @@ class IFSGenerator:
             (self.x,self.y) = self.readPointsFromFile()
         else:
             fractionDone = .1
-            functionList = self.IFS.getFunctionList()
-            numOfFunctions = len(functionList)
-            numPoints = (numOfFunctions**(self.depth+1))
-            self.x = [0.0]*numPoints
-            self.y = [0.0]*numPoints
-            self.color = [0]*numPoints
 
-            for i in range(numPoints):
+            for i in range(self.numPoints):
                 #for each possible combination 
                 xi = 0.0
                 yi = 0.0
                 for j in range(self.depth):
                     # go through self.depth operations
-                    funIndex = int(i/(numOfFunctions**j)) % numOfFunctions
-                    (xi,yi) = functionList[funIndex](xi,yi)
+                    funIndex = int(i/(self.numOfFunctions**j)) % self.numOfFunctions
+                    (xi,yi) = self.functionList[funIndex](xi,yi)
                 self.x[i] = xi
                 self.y[i] = yi
                 self.color[i] = i #color scheme  is here (paramterize?)
-                if i/numPoints > fractionDone:
+                if i/self.numPoints > fractionDone:
                     print("%"+str(int(fractionDone*100)) + " Done")
                     fractionDone = fractionDone+.1
             print('%100 Done')
+            
     def plotFractal(self):
         fig = plt.figure()
         fig.patch.set_alpha(1)
         fig.set_size_inches(30,20)
         ax = fig.add_subplot(1,1,1)
         
-        ax.scatter(self.x,self.y,s = .1, marker = ".",c = self.color,cmap = 'cool',edgecolors = None)
+        ax.scatter(self.x,self.y,s = 10000/np.sqrt(self.numPoints), marker = ".",c = self.color,cmap = 'cool',edgecolors = None)
         ax.set_aspect('equal')
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
 
         plt.show()
         fig.savefig(self.fileName +'.png',transparent = True,dpi = 200)
+        
     def saveData(self):
         if self.overwrite or not self.canReadFromFile():
             self.File = open(self.fileName+".out",'w')
@@ -89,31 +93,61 @@ class IFSGenerator:
                 self.File.write(str(yi)+',') 
             self.File.write('\n')
             self.File.close()
+            
     def draw(self):
+        print("Generatating Points ...")
         self.generatePoints()
+        print("Points Generated")
+        print("Saving ...")
         self.saveData()
+        print("Plotting ...")
         self.plotFractal()
 
 class IFSGoldenDragon:
     def __init__(self):
         phi = (1+np.sqrt(5))/2
-        self.r = (1/phi)**(1/phi)
-        theta = np.arccos((1+self.r**2 - self.r**4)/(2*self.r))
-        self.R1 = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta),np.cos(theta)]]) 
-        theta2 = np.pi - np.arccos((1+self.r**4 - self.r**2)/(2*self.r**2))
-        self.R2 = np.array([[np.cos(theta2), -np.sin(theta2)],[np.sin(theta2),np.cos(theta2)]])
-    def fun1(self,x,y):
-        v = np.array([[x],[y]])
-        v = np.matmul(self.R1,v)*self.r
-        return (v[0][0],v[1][0])
-    def fun2(self,x,y):
-        v = np.array([[x],[y]])
-        v = np.matmul(self.R2,v)*self.r**2+np.array([[1.0],[0.0]])
-        return (v[0][0],v[1][0])
+        r = (1/phi)**(1/phi)
+        theta = np.arccos((1+r**2 - r**4)/(2*r))
+        theta2 = np.pi - np.arccos((1+r**4 - r**2)/(2*r**2))
+        
+        self.funArray = (afineTransfrom(theta, r),
+                         afineTransfrom(theta2, r**2, np.array([[1.0],[0.0]])))
+                         
     def getFunctionList(self):
-        return [self.fun1,self.fun2]
+        return self.funArray
+    
     def name(self):
         return "GoldenDragon"
+    
+    
+class IFSCustomDragon:
+    def __init__(self):
+        theta1 = 1*np.pi/5
+        theta2 = np.pi - theta1
+
+        scale1 = 0.5/np.cos(theta1)
+        scale2 = 0.5/np.cos(theta1)
+        self.funArray = (afineTransfrom(theta1, scale1),
+                         afineTransfrom(theta2, scale2, np.array([[1.0],[0.0]])))
+
+    def getFunctionList(self):
+        return self.funArray
+        
+    def name(self):
+        return "CustomDragon"
+
+
+
+
+
+class afineTransfrom:
+    def __init__(self,theta,scale,translation = np.array([[0.0],[0.0]])):
+        self.R = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta),np.cos(theta)]]) * scale
+        self.t = translation
+    def __call__(self,x,y):
+        v = np.array([[x],[y]])
+        v = np.matmul(self.R,v) + self.t
+        return (v[0][0],v[1][0])
 
     
         
@@ -121,8 +155,9 @@ class IFSGoldenDragon:
 
 
 if __name__ == '__main__':
-    anIFS = IFSGoldenDragon()
-    myDrawBot = IFSGenerator(IFS = anIFS,depth = 21)
+    #anIFS = IFSGoldenDragon()
+    anIFS = IFSCustomDragon()
+    myDrawBot = IFSGenerator(IFS = anIFS,depth = 15,overwrite = True)
     myDrawBot.draw()
     
 
