@@ -17,10 +17,10 @@ class IFSGenerator:
         self.File = None
         self.functionList = self.IFS.getFunctionList()
         self.numOfFunctions = len(self.functionList)
-        self.numPoints = (self.numOfFunctions**(self.depth+1))
+        self.numPoints = (self.numOfFunctions**(self.depth))
         self.x = [0.0]*self.numPoints
         self.y = [0.0]*self.numPoints
-        self.color = [0]*self.numPoints
+        self.color = [[0,0,0]]*self.numPoints
 
     def canReadFromFile(self):
         readable = False
@@ -52,18 +52,23 @@ class IFSGenerator:
             (self.x,self.y) = self.readPointsFromFile()
         else:
             fractionDone = .1
-
+            numColors = 4
             for i in range(self.numPoints):
                 #for each possible combination 
                 xi = 0.0
                 yi = 0.0
+                colorsi = [0,0,0]
                 for j in range(self.depth):
                     # go through self.depth operations
-                    funIndex = int(i/(self.numOfFunctions**j)) % self.numOfFunctions
+                    funIndex = int(i/(self.numOfFunctions**(j))) % self.numOfFunctions
                     (xi,yi) = self.functionList[funIndex](xi,yi)
+#                    colorsi = [a + b/self.depth for a,b in zip(colorsi, self.IFS.getColors()[funIndex])]
                 self.x[i] = xi
                 self.y[i] = yi
-                self.color[i] = i #color scheme  is here (paramterize?)
+                colorProportion = int(numColors*(i/self.numPoints))/numColors
+                self.color[i] =  [a*colorProportion + b*(1.0-colorProportion) for a,b in zip(self.IFS.getColors()[0], self.IFS.getColors()[1])]
+                    
+                    
                 if i/self.numPoints > fractionDone:
                     print("%"+str(int(fractionDone*100)) + " Done")
                     fractionDone = fractionDone+.1
@@ -75,7 +80,7 @@ class IFSGenerator:
         fig.set_size_inches(30,20)
         ax = fig.add_subplot(1,1,1)
         
-        ax.scatter(self.x,self.y,s = 10000/np.sqrt(self.numPoints), marker = ".",c = self.color,cmap = 'cool',edgecolors = None)
+        ax.scatter(self.x,self.y,s = 10000/np.sqrt(self.numPoints), marker = ".",c = self.color,edgecolors = None)
         ax.set_aspect('equal')
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
@@ -129,9 +134,12 @@ class IFSCustomDragon:
         scale2 = 0.5/np.cos(theta1)
         self.funArray = (afineTransfrom(theta1, scale1),
                          afineTransfrom(theta2, scale2, np.array([[1.0],[0.0]])))
+        self.colorArray = ((0,0,0),(162.0/255,101.0/255,223.0/255))
 
     def getFunctionList(self):
         return self.funArray
+    def getColors(self):
+        return self.colorArray
         
     def name(self):
         return "CustomDragon"
