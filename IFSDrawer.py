@@ -20,7 +20,7 @@ class IFSGenerator:
         
         if numPoints is None:
             self.depth = depth    
-            self.numPoints = (self.numOfFunctions**(self.depth+1))-1
+            self.numPoints = (self.numOfFunctions**(self.depth))
             
         else:
             self.numPoints = int(numPoints)
@@ -104,7 +104,7 @@ class IFSGenerator:
         fig.set_size_inches(30,20)
         ax = fig.add_subplot(1,1,1)
         
-        ax.scatter(self.x,self.y,s = 10000/np.sqrt(self.numPoints), marker = ".",c = self.color,edgecolors = None)
+        ax.scatter(self.x,self.y,s = 1000/np.sqrt(self.numPoints), marker = ".",c = range(self.numPoints),cmap = 'hsv',edgecolors = None)
         ax.set_aspect('equal')
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
@@ -118,6 +118,7 @@ class IFSGenerator:
             for xi in self.x:
                 self.File.write(str(xi)+',')
             self.File.write('\n')
+            print("%50 Done")
             for yi in self.y:
                 self.File.write(str(yi)+',') 
             self.File.write('\n')
@@ -163,17 +164,17 @@ class IFSGoldenDragon(IFSAbstract):
         
     
 class IFSCustomDragon(IFSAbstract):
-    def __init__(self):
+    def __init__(self,theta = np.pi/5):
         
         self.myName = "CustomDragon"
         
-        theta1 = 1*np.pi/5
+        theta1 = theta
         theta2 = np.pi - theta1
 
         scale1 = 0.5/np.cos(theta1)
         scale2 = 0.5/np.cos(theta1)
-        self.funArray = (afineTransfrom(theta1, scale1),
-                         afineTransfrom(theta2, scale2, np.array([[1.0],[0.0]])))
+        self.funArray = (afineTransfrom(theta = theta1, scale = scale1),
+                         afineTransfrom(theta = theta2, scale = scale2, translation=np.array([[1.0],[0.0]])))
         self.colorArray = ((0,0,0),(162.0/255,101.0/255,223.0/255))
         
 
@@ -213,9 +214,9 @@ class afineTransfrom:
 
 if __name__ == '__main__':
     #anIFS = IFSGoldenDragon()
-    #anIFS = IFSCustomDragon()
-    anIFS = IFSFern()
-    myDrawBot = IFSGenerator(IFS = anIFS,numPoints = 1e8,overwrite = True)
+    anIFS = IFSCustomDragon(theta =2* np.pi/3-.2)
+    #anIFS = IFSFern()
+    myDrawBot = IFSGenerator(IFS = anIFS,depth = 21,overwrite = False)
     myDrawBot.draw()
     
 
