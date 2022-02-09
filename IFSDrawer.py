@@ -18,8 +18,10 @@ class IFSGenerator:
         self.File = None
         self.functionList = self.IFS.getFunctionList()
         self.numOfFunctions = len(self.functionList)
-        
-        
+        self.depth = depth    
+        self.numPoints = int(numPoints)
+
+                
         if numPoints is None and depth is not None:
             self.depth = depth    
             self.numPoints = (self.numOfFunctions**(self.depth))
@@ -29,7 +31,6 @@ class IFSGenerator:
         else:
             self.depth = depth  
             self.numPoints = int(numPoints)
-
 
         
             
@@ -115,6 +116,7 @@ class IFSGenerator:
         ax = fig.add_subplot(1,1,1)
         
         ax.scatter(self.x,self.y,s = 1000/np.sqrt(self.numPoints), marker = ".",c = self.color,cmap = 'summer',edgecolors = None)
+
         ax.set_aspect('equal')
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
@@ -251,6 +253,7 @@ if __name__ == '__main__':
         myDrawBot = IFSGenerator(IFS = anIFS,depth = 100, numPoints = 10e5, overwrite = True)
         myDrawBot.draw()
         
+
     
 
     

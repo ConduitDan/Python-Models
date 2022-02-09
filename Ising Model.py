@@ -8,7 +8,7 @@ class Ising:
  a generic lattice model. It's a model for magnetism'''
 
 
-    def __init__(self, nx = 100, ny = 100, H = 0, T = 0, J = 1, IC=.5):
+    def __init__(self, nx = 20, ny = 20, H = 0, T = 0, J = 1, IC=1):
     
         self.nx = nx # Size in the X-direction
         self.ny = ny # Size in the Y-direction
@@ -32,14 +32,14 @@ class Ising:
         
         
         E = self.lattice[i,j]*self.H # Energy
-        for ii in range(-1,2): # look left and right
-            for jj in range(-1,2): #look up and down
-                neighbori = (i + ii) % self.ny
-                neighborj = (j + jj) % self.nx
-                E -= self.J*self.lattice[i,j]*self.lattice[neighbori,neighborj]
-        E += self.J # take off the self energy (i=0,j=0)
+        ilook = [0,0,-1,1]
+        jlook = [-1,1,0,0]
+        for ii in range(4): # look left and right
+            neighbori = (i +ilook[ii]) % self.ny
+            neighborj = (j + jlook[ii]) % self.nx
+            E -= self.J*self.lattice[i,j]*self.lattice[neighbori,neighborj]
 
-        if E>0 or np.random.rand()>np.exp(self.T*E): # accept or reject the move
+        if E>0 or np.random.rand()<np.exp(E/(self.T+1e-16)): # accept or reject the move
             self.lattice[i,j] = -1*self.lattice[i,j]
 
     def update(self): 
@@ -48,10 +48,14 @@ class Ising:
         i = np.random.randint(self.ny)
         self.step(i,j)
     
-    def MCstep(self,numMCSteps):
+    def MCstep(self,numMCSteps = None):
         ''' For the number of MonteCarlo steps update a number of random 
         sites equal to the number of total latice sites'''
         
+        if numMCSteps is None: # we haven't been told howmany to do, figure it out
+            Tc = 2/np.log(1+np.sqrt(2))
+            numMCSteps = np.log(1-abs(self.T/Tc)+1e-16)
+            numMCSteps = min([numMCSteps,1e6]) #max out at 10000 steps
         Nstep = self.nx*self.ny
         for nn in range(numMCSteps):
             for n in range(Nstep):
@@ -64,15 +68,106 @@ class Ising:
         Tc = 2*self.J/np.log(1+np.sqrt(2))
         for T in range(5,0):
             NMCsteps = np.log(T-Tc)
+            
+    def m(self):
+        aveM = 0
+        
+        nsamples = 50
+        for k in range(nsamples):
+            m = 0
+            for i in range(self.nx):
+                for j in range(self.ny):
+                    m += self.lattice[i,j]/(self.nx*self.ny)
+            aveM+=abs(m)/nsamples
+            self.MCstep(2)
+        return aveM
+    def msusceptibility(self):
+        aveSus = 0 
+        nsamples = 50
+        startLattice = self.lattice
+        for k in range(nsamples):
+            self.lattice = startLattice
+            mstart = self.m()
+            dh = 0.1
+            oldH = self.H
+            self.H+=dh
+            self.MCstep(200)
+            self.H= oldH
+            mend = self.m()
+            aveSus +=(mend-mstart)/dh/nsamples
+        return aveSus
+    
+        
+        
+        
+
+
+
+
+
+
+class IsingExperiment:
+    def __init__(self):
+        pass
+    
+    def tempGrad(self,Tgrad,measurment):
+        Tc = 2/np.log(1+np.sqrt(2))
+        quantity=[];
+        i =0
+        for myT in Tgrad:
+            i +=1;
+            myModel = Ising(T=myT)
+            myModel.MCstep(200)
+            quantity.append(measurment(myModel))
+            print(str(i*2)+"% done")
+        return quantity
+            
+        
+        
+    def magGrad(self,Hgrad,myT,measurement):
+        Tc = 2/np.log(1+np.sqrt(2))
+        quantity=[];
+        i =0
+        myModel = Ising(T=myT,H=myH)
+
+        for myH in Hgrad:
+            myModel.H=myH
+            i +=1;
+            myModel.MCstep(200)
+            quantity.append(measurement(myModel))
+            print(str(i*2)+"% done")
+
+
+        
+    def phaseTransitionGraph(self):
+        Tgrad = np.linspace(5,0)
+        m = self.tempGrad(Tgrad,Ising.m)
+        plt.plot(Tgrad,m)
+    
+    def susceptibility(self):
+        Tgrad = np.linspace(5,0)
+        chi = self.tempGrad(Tgrad,Ising.msusceptibility)
+        plt.plot(Tgrad,chi)
+    
+    def hysterisis(self):
+        Hgrad = np.linspace(-1,1)
+        m = self.magGrad(Hgrad,2,Ising.m)
+        plt.plot(Hgrad,m)
+
+            
+
+            
+        
+        
+        
+
 
 if __name__ == '__main__':
         #fig, ax = plt.subplots(1,1)
         #fig.tight_layout()
-        mag = Ising(T=0)
-        plt.matshow(mag.MCstep(10))
-        plt.colorbar()
-        plt.show()
-
+        myExp = IsingExperiment()
+        #myExp.phaseTransitionGraph()
+        myExp.susceptibility()
 
             
             
