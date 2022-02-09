@@ -16,15 +16,17 @@ class IFSGenerator:
         self.File = None
         self.functionList = self.IFS.getFunctionList()
         self.numOfFunctions = len(self.functionList)
+        self.depth = depth    
+        self.numPoints = int(numPoints)
+
         
-        
-        if numPoints is None:
-            self.depth = depth    
-            self.numPoints = (self.numOfFunctions**(self.depth))
+        # if numPoints is None:
+        #     self.depth = depth    
+        #     self.numPoints = (self.numOfFunctions**(self.depth))
             
-        else:
-            self.numPoints = int(numPoints)
-            self.depth = int(np.ceil(np.log(self.numPoints)/np.log(self.numOfFunctions)))
+        # else:
+        #     self.numPoints = int(numPoints)
+        #     self.depth = int(np.ceil(np.log(self.numPoints)/np.log(self.numOfFunctions)))
         
             
         self.x = [0.0]*self.numPoints
@@ -104,7 +106,7 @@ class IFSGenerator:
         fig.set_size_inches(30,20)
         ax = fig.add_subplot(1,1,1)
         
-        ax.scatter(self.x,self.y,s = 1000/np.sqrt(self.numPoints), marker = ".",c = range(self.numPoints),cmap = 'hsv',edgecolors = None)
+        ax.scatter(self.x,self.y,s = 1000/np.sqrt(self.numPoints), marker = ".",c = [0,.75,0],edgecolors = None)
         ax.set_aspect('equal')
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
@@ -214,9 +216,9 @@ class afineTransfrom:
 
 if __name__ == '__main__':
     #anIFS = IFSGoldenDragon()
-    anIFS = IFSCustomDragon(theta =2* np.pi/3-.2)
-    #anIFS = IFSFern()
-    myDrawBot = IFSGenerator(IFS = anIFS,depth = 21,overwrite = False)
+    #anIFS = IFSCustomDragon(theta =2* np.pi/3-.2)
+    anIFS = IFSFern()
+    myDrawBot = IFSGenerator(IFS = anIFS,depth = 100, numPoints = 1e5,overwrite = True)
     myDrawBot.draw()
     
 
