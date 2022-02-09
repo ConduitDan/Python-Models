@@ -8,7 +8,7 @@ class Ising:
  a generic lattice model. It's a model for magnetism'''
 
 
-    def __init__(self, nx = 20, ny = 20, H = 0, T = 0, J = 1, IC=1):
+    def __init__(self, nx = 10, ny = 10, H = 0, T = 0, J = 1, IC=1):
     
         self.nx = nx # Size in the X-direction
         self.ny = ny # Size in the Y-direction
@@ -72,18 +72,18 @@ class Ising:
     def m(self):
         aveM = 0
         
-        nsamples = 50
+        nsamples = 20
         for k in range(nsamples):
             m = 0
             for i in range(self.nx):
                 for j in range(self.ny):
                     m += self.lattice[i,j]/(self.nx*self.ny)
             aveM+=abs(m)/nsamples
-            self.MCstep(2)
+            self.MCstep(5)
         return aveM
     def msusceptibility(self):
         aveSus = 0 
-        nsamples = 50
+        nsamples = 20
         startLattice = self.lattice
         for k in range(nsamples):
             self.lattice = startLattice
@@ -114,12 +114,16 @@ class IsingExperiment:
         Tc = 2/np.log(1+np.sqrt(2))
         quantity=[];
         i =0
+        nsample = 5
         for myT in Tgrad:
+            q =0 
             i +=1;
-            myModel = Ising(T=myT)
-            myModel.MCstep(200)
-            quantity.append(measurment(myModel))
-            print(str(i*2)+"% done")
+            for i in range(nsample):
+                myModel = Ising(T=myT)  
+                myModel.MCstep(200)
+                q += measurment(myModel)/nsample
+        quantity.append()
+        print(str(i*2)+"% done")
         return quantity
             
         
@@ -128,7 +132,7 @@ class IsingExperiment:
         Tc = 2/np.log(1+np.sqrt(2))
         quantity=[];
         i =0
-        myModel = Ising(T=myT,H=myH)
+        myModel = Ising(T=myT,H=0)
 
         for myH in Hgrad:
             myModel.H=myH
