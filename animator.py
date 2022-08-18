@@ -45,23 +45,7 @@ class ModelAnimator:
                 axrow.append(plt.subplot(myGridSpec[i,j]))
             self.ax.append(axrow)
         
-        
-        
 
-
-#        self.ax = plt.subplots(self.numPlotsY,self.numPlotsX,
-#                                         sharex=True, sharey=True,
-#                                         squeeze = False, subplot_kw = {"aspect":"equal"},
-#                                         )
-        
-        
-        #make sure this is a 2d array
-        # if self.numPlotsY == 1:
-        #     self.ax = [self.ax]
-        
-        # if self.numPlotsX == 1:
-        #      for i in range(self.numPlotsY):
-        #          self.ax[i] = [self.ax[i]]
         self.maxSteps = 0 
         for i in range(self.numPlotsY):
             for j in range(self.numPlotsX):
@@ -90,7 +74,7 @@ class ModelAnimator:
      
         
     def isDone(self):
-        done = True;
+        done = True
         for row in self.modelArray:
             for model in row:
                 if not model.isDone():

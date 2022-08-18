@@ -37,6 +37,8 @@ class KuramotoModel:
     def update(self):
         '''The update function updates the current state, this will
         increase the time by dt'''
+
+        # add dt to t
         self.t += self.dt
 
         for osc in self.oscList:
