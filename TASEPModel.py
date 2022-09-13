@@ -88,38 +88,66 @@ class TASEPModelObs:
 
 
 class TASEPExperiment:
-    def phaseDiagram(self):
+    def phaseDiagram(self,numSites = 100):
         alpharange = np.linspace(0,1,50)
         betarange = np.linspace(0,1,50)
         density = np.zeros((len(alpharange),len(betarange)))
         max = len(alpharange)*len(betarange)
         for i in range(len(alpharange)):
             for j in range(len(betarange)):
-                myModel = TASEPModel(N=1000,alpha=alpharange[i],beta=betarange[j])
+                myModel = TASEPModel(N=numSites,alpha=alpharange[i],beta=betarange[j])
                 density[i,j] = self.runModel(myModel)
                 # print("at alpha = %f and beta = %f density was %f"%(alpharange[i],betarange[j],density[i,j]))
             print("%d of %d done"%(i,len(alpharange)))
         fig,ax = plt.subplots()
         im = plt.imshow(density, extent=[0,1,0,1])
         fig.colorbar(im,ax=ax)
-        file = open("densityData.txt",'w')
+        file = open("densityDataN%d.txt"%numSites,'w')
         file.write(str(density))
         file.close
-        plt.savefig("densityMap.png",)
+        plt.savefig("densityMapN%d.png"%numSites)
+    def linePlot(self,numSites = 100):
+        betarange = np.linspace(0,1,100)
+        alpharange = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+        density = np.zeros((len(alpharange),len(betarange)))
+        for i in range(len(alpharange)):
+            for j in range(len(betarange)):
+                myModel = TASEPModel(N=numSites,alpha=alpharange[i],beta=betarange[j])
+                density[i,j] = self.runModel(myModel)
+            print("%d of %d done"%(i+1,len(alpharange)))
+        fig,ax = plt.subplots()
+        file = open("densityLineDataN%d.txt"%numSites,'w')
+        file.write(str(density))
+        file.close
+
+        for i in range(len(alpharange)):
+            line, =plt.plot(betarange,density[i,:])
+            line.set_label("\a = %f"%alpharange[i])
+        ax.legend()
+        plt.savefig("densityPlotN%d.png"%numSites)
+
+
+
 
     def runModel(self,myModel):
         #run some equilibration first
-        myModel.MCstep(1000)
-        myObs = TASEPModelObs()
-        myModel.setObs(myObs)
-        myModel.MCstep(100)
-        counter = 0
-        while not myObs.checkSS(1e-6):
+        # it takes about N MC steps to get the the end
+        # and N*(N-1)/2 steps to fill up.
+        # so lets muliply that by 20 and round up
+        for i in range(100):
+            myModel.MCstep(int(myModel.N*myModel.N/10))
+            print("%d percent done"%(i+1))
 
-            myModel.MCstep(100)
-            counter+=1
-            if counter > 100:
-                raise Exception("Couldn't reach steady state")
+        myObs = TASEPModelObs(SScheck = (myModel.N*myModel.N))
+        myModel.setObs(myObs)
+        myModel.MCstep((myModel.N*myModel.N))
+        # counter = 0
+        # while not myObs.checkSS(1e-6):
+
+        #     myModel.MCstep((myModel.N*myModel.N))
+        #     counter+=1
+        #     if counter > 1000:
+        #         raise Exception("Couldn't reach steady state")
 
         return myObs.density()
     def test(self):
@@ -133,7 +161,8 @@ class TASEPExperiment:
 # for steady state check if the mean of the diriviet is below sqrt(N)?
 if __name__ == "__main__":
     myEXP = TASEPExperiment()
-    myEXP.phaseDiagram()
+    for N in [500]:
+        myEXP.linePlot(numSites=N)
     # myEXP.test()
 
 
